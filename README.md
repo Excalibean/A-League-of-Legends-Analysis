@@ -2,7 +2,7 @@
 
 League of Legends Analysis: From a Team Contribution Perspective is UCSD Data Science project aimed at looking at competitive League of Legends data at various stages of analysis. The types of analysis included within this project includes: exploratory analysis, hypothesis testing, prediction modeling, and fairness analysis of the prediction models.
 
-The main goal of this project is to find the significance of "visionscore" and its influence on match outcomes other game aspects.
+The main goal of this project is to find the significance of "Vision Score" and its influence on match outcomes other game aspects.
 
 Author: Edgar Cisneros Barron
 
@@ -14,7 +14,7 @@ League of Legends is a multiplayer online battle arena game (or MOBA) created by
 
 The dataset that we have worked on is a data set that was gathered and created by Oracle's Elixir. The dataset encompasses competitive esports match data from the year 2022.
 
-In League of Legends, the concept of "vision score" is a score derived from contributing "vision" to your team. The team consists of 5 players, and in the arena, the only information available to your team from the start is 
+In League of Legends, the concept of "vision score" is a score derived from contributing "vision" to your team. The team consists of 5 players, and in the arena, the only information available to your team from the start is the starting area where your team starts. A player can provide a team more 'vision' by exploring the map and temporarily revealing a portion of the map for your team on the minimap. PLayers can further contribute by leaving Wards, or totem-liek objects that stand in place maintaining an area revealed for the team until destroyed by enemy players. This action would restrict the information available on the minimap as revealed parts of the minimap displays enemy positions.
 
 ### Columns Used
 Oracle Elixir's dataset spans 161 columns of data from 150,180 rows of individual player and team suammary match data. Out of this large dataset, we picked out these columns to assess player and team performance.
@@ -77,3 +77,60 @@ The head of the cleaned dataframe:
 |  2 | BRION Challengers | LCKC     | Blue   | mid        |       2 |        2 |         3 |             16 |           177 |            19 |             7 |            29 | False |            0 |     0.3152 |        9715 |
 |  3 | BRION Challengers | LCKC     | Blue   | bot        |       2 |        4 |         2 |             18 |           208 |            12 |             6 |            25 | False |            1 |     0.3152 |       10605 |
 |  4 | BRION Challengers | LCKC     | Blue   | sup        |       1 |        5 |         6 |              0 |            42 |            29 |            14 |            69 | False |            1 |     0.3152 |        6678 |
+
+### Univariate Analysis
+After performing univariate analysis on the Vision Score, we found that the distribution of of Vision Scores for all teams to be somewhat Normally shaped. It is mildly skewed to the right. 
+
+<iframe
+  src="assets/visionscore_uni.html"
+  width="800"
+  height="600"
+  frameborder="0"
+></iframe>
+
+This distribution indicates that our vision scores are not unusual for the typical competitive match. 
+
+### Bivariate Analysis
+We then dove deeper and analyzed whether teams with High Vision Scores had lower or higher win rates compared to Low Vision Scoring teams
+
+<iframe
+  src="assets/visionscore_win_bi.html"
+  width="800"
+  height="600"
+  frameborder="0"
+></iframe>
+
+As seen above, teams with higher visino scores had a higher win rate overall. Teams with lower visionscore lost more often.
+
+### Interesting Aggregates
+Here was an interesting aggregate that was found.
+
+
+| win   |    kills |   deaths |   assists |   monsterkills |   minionkills |   wardsplaced |   wardskilled |   visionscore |   firstblood |   team kpm |   totalgold |
+|:------|---------:|---------:|----------:|---------------:|--------------:|--------------:|--------------:|--------------:|-------------:|-----------:|------------:|
+| False |  9.36855 | 19.6298  |   20.076  |        180.894 |       791.478 |       95.2623 |       41.4919 |       211.571 |     0.390043 |   0.291051 |     51925.4 |
+| True  | 19.6096  |  9.40619 |   44.5897 |        215.889 |       812.268 |       98.8539 |       45.7536 |       238.074 |     0.608359 |   0.641814 |     61908.2 |
+
+First, we filtered out the players to keep only team summary data, and then grouped by wins and took the means. Overall, as expected, every stat had improvements for thw winning team, and most notably, higher visionscores but only by around 30 points.
+
+## Assessment of Missingness
+
+### NMAR Analysis
+Among all the columns, there are 5 `ban` columns named `ban1` - `ban5` indicating players banning player playable Champion characters from benig player by the enemy team. Whether or no a champion is ban for that match is up to the players as the can choose to ban or not to ban any Champions. Fof this reason, it leads us ot believe that the `ban` columns have NMAR missingness.
+
+### Missingness Dependency
+
+Using team summary data, we will check the missingness dependency of the `minionkills` column over other columns within this section.
+
+We first used tested if the missingness dependency of the `minionkills` column depended on if the match was a playoff game using the column `playoffs` from the original dataset.
+
+The `playoffs` column indicates whether or not a match was a playoff game with 1 indicating yes, and 0 indicating it was not.
+
+<iframe
+  src="assets/playoffs_permutation_missing.html"
+  width="800"
+  height="600"
+  frameborder="0"
+></iframe>
+
+
