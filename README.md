@@ -126,6 +126,14 @@ We first used tested if the missingness dependency of the `minionkills` column d
 
 The `playoffs` column indicates whether or not a match was a playoff game with 1 indicating yes, and 0 indicating it was not.
 
+We ran a Permutation test by shuffling the `playoffs` column and creating a column showing whether or not the `minionkills` value was missing within the original dataset.
+
+We had the following Hypotheses:
+
+**Null:** The distribution of `minionkills` being missing on `playoffs` is the same as the distribution of `minionkills` notbeing missing on `playoffs`.
+
+**Alternative:** The distribution of `minionkills` being missing on `playoffs` is **NOT** the same as the distribution of `minionkills` notbeing missing on `playoffs`.
+
 <iframe
   src="assets/playoffs_permutation_missing.html"
   width="800"
@@ -133,4 +141,93 @@ The `playoffs` column indicates whether or not a match was a playoff game with 1
   frameborder="0"
 ></iframe>
 
+With a p-value of **0.0** and significance level of 0.05, we reject the null. `minionkills` is dependent on `playoffs`.
+
+After this, we ran a second Permutation Test by checking the missingness dependency of `minionkills` on `side`. 
+
+The same thing as before was done, shuffle the team `side` column and check for dependency.
+
+**Null:** The distribution of `minionkills` being missing on `side` is the same as the distribution of `minionkills` not being missing on `side`.
+
+**Alternative:** The distribution of `minionkills` being missing on `side` is **NOT** the same as the distribution of `minionkills` notbeing missing on `side`.
+
+<iframe
+  src="assets/team_side_permutation_missing.html"
+  width="800"
+  height="600"
+  frameborder="0"
+></iframe>
+
+With a p-value of 1.0 and significance level of 0.05, we accept the null. `minionkills` isindependent of team `side`.
+
+## Hypothesis Testing
+For our Hypothesis Test, we wanted to see how much Vision Score impacted team Monster Kill counts using Difference of Means as our test statistic.
+
+**Null:** The distribution of monster kills with a high visionscore is the same as the
+distribution of kills for teams with low visionscore.
+
+**Alt Hypothesis:** The distribution of monster kills for teams with high visionscore is different than those teams with low visionscore.
+
+We used a significance level of 0.05.
+
+<iframe
+  src="assets/mon_kill_hypo.html"
+  width="800"
+  height="600"
+  frameborder="0"
+></iframe>
+
+The column `monsterkills` demonstrates a normal distribution, and we found that the hypothesis test resulted in a p-value of **0.0**. We reject the null.
+
+This suggests that Vision Score seems to not contribute to Monster kills during a game. Monster kills may have depend on other factors that do not rely on team information as monsters remain within certain areas of the arena.
+
+## Framing a Prediction Problem
+
+After our Hypothesis Test, we found that visionscore seems to have little or no impact on NPC kills such as monsters. But as we saw in our Bivariate Analysis, it seems to have contribution on whether or not a team wins or loses. Visionscore is only one of many factors that wins a game, so we can also make use of kills, assists, deaths, team kpm, and firstblood columns to help predict whether a team won or lost. 
+
+During a game, team statistics are always available to view mid-game where you can see player `kills`, `deaths`, and `assists` among other metrics for both teams. It makes it possible to make predictions while a game is being played at the time of prediction.
+
+**Prediction Problem:** Can we predict whether a team won or lost according to team stat summaries?
+
+This sort of problem is a Classification problem. A team will be predicted to either win or lose. Only two options, so this is a specifically a Binary Classification problem trying to predict the `win` column. For this case, we can use a Logistical Regression model.
+
+Since we will be using a Classification model, F-1 Score and Accuracy will be our accuracy metrics as we can assess the model's Accuracy by seeing how many True Positives it achieved while also assessing the balance between Recall and Precision using the F-1 Score.
+
+Fortunately, the column is already in a 1 or 0 format, so there is not need to apply a One-Hot Encoder.
+
+To start employing machine learning techniques, we can try to use basic stats: `kills`, `deaths`, and `assists`, as the predictor for a team winning or losing a game for our baseline model. The data will be given a 5 fold split of 20% test data and 80% training data.
+
+We will later add `firstblood`, `team kpm`, and `totalgold` to further improve our baseline model where firstblood is our only categorical column among the others. It also avoids the need to apply a One-Hot Encoder as it is alreawdy in a 1 or 0 format. These are also in game metrics or events that are tracked or trackable mid-game at the time prediction.
+
+## Baseline Model
+For our baseline model, the columns being used are all quantitative columns on a binary prediction, which led us to believe that we can use a Logistical Regression classifcation model for this prediction.
+
+Our Baseline Model achieved a surprising **0.9556 Accuracy** and a similar **0.9560 F-1 Score**.
+
+This suggests that the model was able to correctly predict 95.56% of the match outcomes correctly while also maintaining high Recall and Precision close to 1. We can try to manage near perfect predictions in the Final Model using more mid-game scoreboard metrics.
+
+## Final Model
+For the Final Model, we added the columns: `firstblood`, `team kpm`, and `totalgold`.
+These columns further assesses team performance by showing increased number of kills and objective completions during matches. 
+
+Originally, a Random Forest Classifier was fit to see for improvement first. It acheived very similar F-1 Score and Accuracy as our Baseline Model, so we returned back to the Logistical Regression and achieved a nearly 1% increase on both metrics.
+
+Our Final Model achieved: **0.9646 Accuracy** and **0.9650 F-1 Score**
+
+Among the other data available, this may be highes accuracy we can achieve. Other remaining scoreboard stats like `minionkills` and `monsterkills` are normally distributed, so they are likely to give minimal impact on our model's predictions.
+
+## Fairness Analysis
+To assess the fairness of our model, we tracked the differences in F-1 Scores among all leagues in the `league` column. Since we used a classification model, we can use the F-1 Score to assess the Precision and Recall of our model among all esports leagues.
+
+We can take all observed F-1 Scores per league, and run a Permutation Test to see if any league suffered from decreased F-1 Score unfairly compred to the rest.
+
+This would make our group 'X' be our current League being compared, and our Group Y would be all other leagues.
+
+In other words: Does our model perform worse for league 'X' than it does for all other leagues 'Y'.
+
+**Null:** Our Model is Fair. The precision of this model across all League of Legends competitive leagues is roughly the same across all leagues.
+
+**Alt:** Our model is unfair. One or more leagues has precision lower than the other leagues.
+
+With a significance level of 0.05, we accept the null with a p-value of **0.1146** and deem our model is fair
 
